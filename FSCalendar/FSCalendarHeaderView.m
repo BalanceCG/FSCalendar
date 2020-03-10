@@ -51,12 +51,13 @@
     
     FSCalendarCollectionView *collectionView = [[FSCalendarCollectionView alloc] initWithFrame:CGRectZero collectionViewLayout:collectionViewLayout];
     collectionView.scrollEnabled = NO;
-    collectionView.userInteractionEnabled = NO;
+    collectionView.userInteractionEnabled = YES;
     collectionView.backgroundColor = [UIColor clearColor];
     collectionView.dataSource = self;
     collectionView.delegate = self;
     collectionView.showsHorizontalScrollIndicator = NO;
     collectionView.showsVerticalScrollIndicator = NO;
+    collectionView.allowsSelection = YES;
     [self addSubview:collectionView];
     [collectionView registerClass:[FSCalendarHeaderCell class] forCellWithReuseIdentifier:@"cell"];
     self.collectionView = collectionView;
@@ -96,6 +97,7 @@
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView
 {
     [_collectionView.visibleCells makeObjectsPerformSelector:@selector(setNeedsLayout)];
+    [self configureAppearance];
 }
 
 #pragma mark - Properties
@@ -167,7 +169,16 @@
                     text = nil;
                 } else {
                     NSDate *date = [self.calendar.gregorian dateByAddingUnit:NSCalendarUnitMonth value:indexPath.item-1 toDate:self.calendar.minimumDate options:0];
-                    text = [_calendar.formatter stringFromDate:date];
+                    
+                    NSDateComponents* currentPageComponents = [[NSCalendar currentCalendar] components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:_calendar.currentPage];
+                    NSDateComponents* iteratedDateComponents = [[NSCalendar currentCalendar] components:NSCalendarUnitYear|NSCalendarUnitMonth|NSCalendarUnitDay fromDate:date];
+                    BOOL isSelectedMonth = currentPageComponents.month == iteratedDateComponents.month;
+                    
+                    if (isSelectedMonth) {
+                        text = [NSString stringWithFormat:@"%@ ▼", [_calendar.formatter stringFromDate:date]];
+                    } else {
+                        text = [_calendar.formatter stringFromDate:date];
+                    }
                 }
             } else {
                 NSDate *date = [self.calendar.gregorian dateByAddingUnit:NSCalendarUnitMonth value:indexPath.item toDate:self.calendar.minimumDate options:0];
@@ -191,6 +202,7 @@
     }
     text = usesUpperCase ? text.uppercaseString : text;
     cell.titleLabel.text = text;
+    
     [cell setNeedsLayout];
 }
 
